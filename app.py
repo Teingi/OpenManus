@@ -35,13 +35,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class Task(BaseModel):
     id: str
     prompt: str
     created_at: datetime
     status: str
     steps: list = []
+    confirmation_required: bool = False  # 是否需要确认
 
     def model_dump(self, *args, **kwargs):
         data = super().model_dump(*args, **kwargs)
@@ -50,18 +50,47 @@ class Task(BaseModel):
 
 
 class TaskManager:
+    MAX_HISTORY_SIZE = 100  # 最大历史任务数量
     def __init__(self):
         self.tasks = {}
         self.queues = {}
+        self.history = []
 
     def create_task(self, prompt: str) -> Task:
         task_id = str(uuid.uuid4())
         task = Task(
-            id=task_id, prompt=prompt, created_at=datetime.now(), status="pending"
+            id=task_id,
+            prompt=prompt,
+            created_at=datetime.now(),
+            status="pending",
+            confirmation_required=False,
         )
         self.tasks[task_id] = task
         self.queues[task_id] = asyncio.Queue()
         return task
+
+    async def require_confirmation(self, task_id: str):
+        if task_id in self.tasks:
+            task = self.tasks[task_id]
+            task.status = "waiting_for_confirmation"
+            task.confirmation_required = True
+            await self.queues[task_id].put(
+                {"type": "status", "status": task.status, "steps": task.steps}
+            )
+
+    async def confirm_task(self, task_id: str):
+        if task_id in self.tasks:
+            task = self.tasks[task_id]
+            if task.status == "waiting_for_confirmation":
+                task.status = "running"
+                task.confirmation_required = False
+                await self.queues[task_id].put(
+                    {"type": "status", "status": task.status, "steps": task.steps}
+                )
+            else:
+                raise HTTPException(status_code=400, detail="Task is not waiting for confirmation")
+        else:
+            raise HTTPException(status_code=404, detail="Task not found")
 
     async def update_task_step(
         self, task_id: str, step: int, result: str, step_type: str = "step"
@@ -84,11 +113,21 @@ class TaskManager:
                 {"type": "status", "status": task.status, "steps": task.steps}
             )
             await self.queues[task_id].put({"type": "complete"})
-
+            self.history.append(task)
+            del self.tasks[task_id]
+            # 如果历史任务超过最大限制，则移除最旧的任务
+            if len(self.history) > self.MAX_HISTORY_SIZE:
+                self.history.pop(0)
     async def fail_task(self, task_id: str, error: str):
         if task_id in self.tasks:
-            self.tasks[task_id].status = f"failed: {error}"
+            task = self.tasks[task_id]
+            task.status = f"failed: {error}"
             await self.queues[task_id].put({"type": "error", "message": error})
+            self.history.append(task)
+            del self.tasks[task_id]
+            # 如果历史任务超过最大限制，则移除最旧的任务
+            if len(self.history) > self.MAX_HISTORY_SIZE:
+                self.history.pop(0)
 
 
 task_manager = TaskManager()
@@ -113,9 +152,24 @@ async def create_task(prompt: str = Body(..., embed=True)):
     asyncio.create_task(run_task(task.id, prompt))
     return {"task_id": task.id}
 
+@app.get("/history")
+async def get_history():
+    history_tasks = task_manager.get_history()
+    return JSONResponse(
+        content=[task.model_dump() for task in history_tasks],
+        headers={"Content-Type": "application/json"},
+    )
+
+@app.post("/tasks/{task_id}/run")
+async def confirm_task(task_id: str, confirmed: dict = Body(...)):
+    if not confirmed.get("confirmed"):
+        raise HTTPException(status_code=400, detail="Confirmation required")
+
+    await task_manager.confirm_task(task_id)
+    return {"message": "Task confirmed and resumed"}
+
 
 from app.agent.manus import Manus
-
 
 async def run_task(task_id: str, prompt: str):
     try:
@@ -130,6 +184,10 @@ async def run_task(task_id: str, prompt: str):
             await task_manager.update_task_step(task_id, 0, thought, "think")
 
         async def on_tool_execute(tool, input):
+            if tool == "obdiag":  # obdiag 是需要确认的工具
+                await task_manager.require_confirmation(task_id)
+                while task_manager.tasks[task_id].confirmation_required:
+                    await asyncio.sleep(1)  # 等待用户确认
             await task_manager.update_task_step(
                 task_id, 0, f"Executing tool: {tool}\nInput: {input}", "tool"
             )
@@ -172,7 +230,6 @@ async def run_task(task_id: str, prompt: str):
 
         sse_handler = SSELogHandler(task_id)
         logger.add(sse_handler)
-
         result = await agent.run(prompt)
         await task_manager.update_task_step(task_id, 1, result, "result")
         await task_manager.complete_task(task_id)
@@ -189,10 +246,6 @@ async def task_events(task_id: str):
 
         queue = task_manager.queues[task_id]
 
-        task = task_manager.tasks.get(task_id)
-        if task:
-            yield f"event: status\ndata: {dumps({'type': 'status', 'status': task.status, 'steps': task.steps})}\n\n"
-
         while True:
             try:
                 event = await queue.get()
@@ -206,13 +259,8 @@ async def task_events(task_id: str):
                 elif event["type"] == "error":
                     yield f"event: error\ndata: {formatted_event}\n\n"
                     break
-                elif event["type"] == "step":
-                    task = task_manager.tasks.get(task_id)
-                    if task:
-                        yield f"event: status\ndata: {dumps({'type': 'status', 'status': task.status, 'steps': task.steps})}\n\n"
-                    yield f"event: {event['type']}\ndata: {formatted_event}\n\n"
-                elif event["type"] in ["think", "tool", "act", "run"]:
-                    yield f"event: {event['type']}\ndata: {formatted_event}\n\n"
+                elif event["type"] == "status":
+                    yield f"event: status\ndata: {formatted_event}\n\n"
                 else:
                     yield f"event: {event['type']}\ndata: {formatted_event}\n\n"
 
@@ -233,7 +281,6 @@ async def task_events(task_id: str):
             "X-Accel-Buffering": "no",
         },
     )
-
 
 @app.get("/tasks")
 async def get_tasks():
