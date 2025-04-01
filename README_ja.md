@@ -136,6 +136,16 @@ python run_mcp.py
 python run_flow.py
 ```
 
+GUI based app
+```bash
+python gui.py
+```
+
+web app
+```bash
+python app.py
+```
+
 ## 貢献方法
 
 我々は建設的な意見や有益な貢献を歓迎します！issueを作成するか、プルリクエストを提出してください。
