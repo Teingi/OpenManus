@@ -522,42 +522,43 @@ pre {
 
 
 /* 2025.04.01 */
-/* .main-panel {
-    flex: 3;
-    padding: 20px;
+/* 历史任务列表 */
+.task-list {
+    max-height: 400px;
     overflow-y: auto;
-} */
+    border: 1px solid #ddd;
+    padding: 10px;
+}
 
-.history-panel {
-    flex: 1;
+.task-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 5px;
     background-color: #f9f9f9;
-    border-left: 1px solid #ddd;
-    padding: 10px;
-    transition: all 0.3s ease;
-    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
-.history-panel.collapsed {
-    width: 50px;
-    padding: 5px;
+.task-item:hover {
+    background-color: #f0f0f0;
 }
 
-.history-panel.collapsed h2,
-.history-panel.collapsed .task-list {
-    display: none;
+.task-status {
+    font-weight: bold;
 }
 
-.toggle-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #007bff;
+.confirm-button {
+    background-color: #28a745;
     color: white;
     border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
     cursor: pointer;
-    text-align: center;
-    border-radius: 5px;
 }
 
-.toggle-button:hover {
-    background-color: #0056b3;
+.confirm-button:hover {
+    background-color: #218838;
 }
