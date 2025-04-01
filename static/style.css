@@ -178,7 +178,7 @@ button:hover {
     flex-direction: column;
     gap: 10px;
     width: 100%;
-    max-height: calc(100vh - 200px);
+    max-height: calc(100vh - 160px);
     overflow-y: auto;
     max-width: 100%;
     overflow-x: hidden;
