@@ -90,3 +90,11 @@ temperature = 0.0                           # Controls randomness for vision mod
 #cpu_limit = 2.0
 #timeout = 300
 #network_enabled = true
+model = "claude-3-5-sonnet"
+base_url = "https://api.openai.com/v1"
+api_key = "sk-..."
+
+# Server configuration
+[server]
+host = "localhost"
+port = 5172
