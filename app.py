@@ -35,13 +35,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class Task(BaseModel):
     id: str
     prompt: str
     created_at: datetime
     status: str
     steps: list = []
-    confirmation_required: bool = False  # 是否需要确认
+    max_step: int = 0  # 新增字段
 
     def model_dump(self, *args, **kwargs):
         data = super().model_dump(*args, **kwargs)
@@ -51,6 +52,7 @@ class Task(BaseModel):
 
 class TaskManager:
     MAX_HISTORY_SIZE = 100  # 最大历史任务数量
+
     def __init__(self):
         self.tasks = {}
         self.queues = {}
@@ -63,32 +65,40 @@ class TaskManager:
             prompt=prompt,
             created_at=datetime.now(),
             status="pending",
-            confirmation_required=False,
         )
         self.tasks[task_id] = task
         self.queues[task_id] = asyncio.Queue()
         return task
 
-    async def require_confirmation(self, task_id: str):
+    async def require_confirmation(self, task_id: str, step_id: int):
         if task_id in self.tasks:
             task = self.tasks[task_id]
-            task.status = "waiting_for_confirmation"
-            task.confirmation_required = True
+            for step in task.steps:
+                if step.get("step") == step_id:
+                    step["confirmation_required"] = True
+                    break
+            else:
+                raise HTTPException(status_code=404, detail=f"Step {step_id} not found in task {task_id}")
             await self.queues[task_id].put(
-                {"type": "status", "status": task.status, "steps": task.steps}
+                {"type": "status", "status": task.status, "steps": task.steps, "max_step": task.max_step}
             )
 
-    async def confirm_task(self, task_id: str):
+    async def confirm_task(self, task_id: str, step_id: int):
         if task_id in self.tasks:
             task = self.tasks[task_id]
-            if task.status == "waiting_for_confirmation":
-                task.status = "running"
-                task.confirmation_required = False
-                await self.queues[task_id].put(
-                    {"type": "status", "status": task.status, "steps": task.steps}
-                )
+            for step in task.steps:
+                if step.get("step") == step_id:
+                    if step.get("confirmation_required"):
+                        step["confirmation_required"] = False
+                        task.status = "running"
+                        await self.queues[task_id].put(
+                            {"type": "status", "status": task.status, "steps": task.steps, "max_step": task.max_step}
+                        )
+                        return
+                    else:
+                        raise HTTPException(status_code=400, detail=f"Step {step_id} does not require confirmation")
             else:
-                raise HTTPException(status_code=400, detail="Task is not waiting for confirmation")
+                raise HTTPException(status_code=404, detail=f"Step {step_id} not found in task {task_id}")
         else:
             raise HTTPException(status_code=404, detail="Task not found")
 
@@ -97,12 +107,31 @@ class TaskManager:
     ):
         if task_id in self.tasks:
             task = self.tasks[task_id]
-            task.steps.append({"step": step, "result": result, "type": step_type})
+            current_step = step
+            max_steps = task.max_step
+
+            if "Executing step" in result:
+                try:
+                    parts = result.split("Executing step", 1)[1].strip().split("/")
+                    current_step = int(parts[0])
+                    max_steps = int(parts[1])
+                    task.max_step = max_steps
+                except Exception as e:
+                    print(f"Error parsing step information: {e}")
+
+            new_step = {
+                "step": current_step,
+                "result": result,
+                "type": step_type,
+                "confirmation_required": False
+            }
+
+            task.steps.append(new_step)
             await self.queues[task_id].put(
-                {"type": step_type, "step": step, "result": result}
+                {"type": step_type, "step": current_step, "result": result, "max_step": max_steps}
             )
             await self.queues[task_id].put(
-                {"type": "status", "status": task.status, "steps": task.steps}
+                {"type": "status", "status": task.status, "steps": task.steps, "max_step": max_steps}
             )
 
     async def complete_task(self, task_id: str):
@@ -110,7 +139,7 @@ class TaskManager:
             task = self.tasks[task_id]
             task.status = "completed"
             await self.queues[task_id].put(
-                {"type": "status", "status": task.status, "steps": task.steps}
+                {"type": "status", "status": task.status, "steps": task.steps, "max_step": task.max_step}
             )
             await self.queues[task_id].put({"type": "complete"})
             self.history.append(task)
@@ -118,11 +147,12 @@ class TaskManager:
             # 如果历史任务超过最大限制，则移除最旧的任务
             if len(self.history) > self.MAX_HISTORY_SIZE:
                 self.history.pop(0)
+
     async def fail_task(self, task_id: str, error: str):
         if task_id in self.tasks:
             task = self.tasks[task_id]
             task.status = f"failed: {error}"
-            await self.queues[task_id].put({"type": "error", "message": error})
+            await self.queues[task_id].put({"type": "error", "message": error, "max_step": task.max_step})
             self.history.append(task)
             del self.tasks[task_id]
             # 如果历史任务超过最大限制，则移除最旧的任务
@@ -152,21 +182,23 @@ async def create_task(prompt: str = Body(..., embed=True)):
     asyncio.create_task(run_task(task.id, prompt))
     return {"task_id": task.id}
 
+
 @app.get("/history")
 async def get_history():
-    history_tasks = task_manager.get_history()
+    history_tasks = task_manager.history
     return JSONResponse(
         content=[task.model_dump() for task in history_tasks],
         headers={"Content-Type": "application/json"},
     )
 
-@app.post("/tasks/{task_id}/run")
-async def confirm_task(task_id: str, confirmed: dict = Body(...)):
+
+@app.post("/tasks/{task_id}/step/{step_id}/run")
+async def confirm_task(task_id: str, step_id: int, confirmed: dict = Body(...)):
     if not confirmed.get("confirmed"):
         raise HTTPException(status_code=400, detail="Confirmation required")
 
-    await task_manager.confirm_task(task_id)
-    return {"message": "Task confirmed and resumed"}
+    await task_manager.confirm_task(task_id, step_id)
+    return {"message": f"Step {step_id} of task {task_id} confirmed and resumed"}
 
 
 from app.agent.manus import Manus
@@ -185,8 +217,8 @@ async def run_task(task_id: str, prompt: str):
 
         async def on_tool_execute(tool, input):
             if tool == "obdiag":  # obdiag 是需要确认的工具
-                await task_manager.require_confirmation(task_id)
-                while task_manager.tasks[task_id].confirmation_required:
+                await task_manager.require_confirmation(task_id, 0)
+                while any(step.get("confirmation_required") for step in task_manager.tasks[task_id].steps):
                     await asyncio.sleep(1)  # 等待用户确认
             await task_manager.update_task_step(
                 task_id, 0, f"Executing tool: {tool}\nInput: {input}", "tool"
@@ -282,6 +314,7 @@ async def task_events(task_id: str):
         },
     )
 
+
 @app.get("/tasks")
 async def get_tasks():
     sorted_tasks = sorted(
@@ -321,7 +354,7 @@ def load_config():
         return {"host": config["server"]["host"], "port": config["server"]["port"]}
     except FileNotFoundError:
         raise RuntimeError(
-            "Configuration file not found, please check if config/fig.toml exists"
+            "Configuration file not found, please check if config/config.toml exists"
         )
     except KeyError as e:
         raise RuntimeError(
