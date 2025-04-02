@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from app.tool import BaseTool
 
 
+# 主要功能是处理结构化的聊天完成（chat completion），并根据指定的 response_type 动态生成 JSON Schema 和执行类型转换。
 class CreateChatCompletion(BaseTool):
     name: str = "create_chat_completion"
     description: str = (
