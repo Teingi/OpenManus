@@ -35,7 +35,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class Task(BaseModel):
     id: str
     prompt: str
@@ -47,8 +46,8 @@ class Task(BaseModel):
     def model_dump(self, *args, **kwargs):
         data = super().model_dump(*args, **kwargs)
         data["created_at"] = self.created_at.isoformat()
+        data["task_id"] = self.id  # 确保 task_id 字段存在
         return data
-
 
 class TaskManager:
     MAX_HISTORY_SIZE = 100  # 最大历史任务数量
@@ -187,10 +186,9 @@ async def create_task(prompt: str = Body(..., embed=True)):
 async def get_history():
     history_tasks = task_manager.history
     return JSONResponse(
-        content=[task.model_dump() for task in history_tasks],
+        content=[task.model_dump() for task in history_tasks],  # 包含 task_id
         headers={"Content-Type": "application/json"},
     )
-
 
 @app.post("/tasks/{task_id}/step/{step_id}/run")
 async def confirm_task(task_id: str, step_id: int, confirmed: dict = Body(...)):
@@ -273,7 +271,7 @@ async def run_task(task_id: str, prompt: str):
 async def task_events(task_id: str):
     async def event_generator():
         if task_id not in task_manager.queues:
-            yield f"event: error\ndata: {dumps({'message': 'Task not found'})}\n\n"
+            yield f"event: error\ndata: {dumps({'message': 'Task not found', 'task_id': task_id})}\n\n"
             return
 
         queue = task_manager.queues[task_id]
@@ -281,6 +279,7 @@ async def task_events(task_id: str):
         while True:
             try:
                 event = await queue.get()
+                event["task_id"] = task_id  # 添加 task_id 字段
                 formatted_event = dumps(event)
 
                 yield ": heartbeat\n\n"
@@ -290,7 +289,6 @@ async def task_events(task_id: str):
                     break
                 elif event["type"] == "error":
                     yield f"event: error\ndata: {formatted_event}\n\n"
-                    break
                 elif event["type"] == "status":
                     yield f"event: status\ndata: {formatted_event}\n\n"
                 else:
@@ -301,7 +299,7 @@ async def task_events(task_id: str):
                 break
             except Exception as e:
                 print(f"Error in event stream: {str(e)}")
-                yield f"event: error\ndata: {dumps({'message': str(e)})}\n\n"
+                yield f"event: error\ndata: {dumps({'message': str(e), 'task_id': task_id})}\n\n"
                 break
 
     return StreamingResponse(
@@ -321,16 +319,19 @@ async def get_tasks():
         task_manager.tasks.values(), key=lambda task: task.created_at, reverse=True
     )
     return JSONResponse(
-        content=[task.model_dump() for task in sorted_tasks],
+        content=[task.model_dump() for task in sorted_tasks],  # 包含 task_id
         headers={"Content-Type": "application/json"},
     )
-
 
 @app.get("/tasks/{task_id}")
 async def get_task(task_id: str):
     if task_id not in task_manager.tasks:
         raise HTTPException(status_code=404, detail="Task not found")
-    return task_manager.tasks[task_id]
+    task = task_manager.tasks[task_id]
+    return JSONResponse(
+        content=task.model_dump(),  # 包含 task_id
+        headers={"Content-Type": "application/json"},
+    )
 
 
 @app.exception_handler(Exception)
