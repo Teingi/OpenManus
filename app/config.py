@@ -30,13 +30,7 @@ class LLMSettings(BaseModel):
 
 class OBragSettings(BaseModel):
     # 基于配置生成模板
-    # model_type = "local"
-    # beg_model_path = "BAAI/beg-m3"
-    # db_host = "localhost"
-    # db_port = "2883"
-    # db_user = "root@test"
-    # db_password = ""
-    # db_name = "test"
+
     model_type: str = Field(..., description="Model type (local, remote, etc.)")
     beg_model_path: str = Field(..., description="Model path")
     db_host: str = Field(..., description="Oceanbase Database host")
