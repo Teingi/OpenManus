@@ -5,6 +5,7 @@ from app.agent.react import ReActAgent
 from app.agent.swe import SWEAgent
 from app.agent.toolcall import ToolCallAgent
 from app.agent.obdiag import OBDIAGAgent
+from app.agent.obrag import OBRAGAgent
 
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "SWEAgent",
     "ToolCallAgent",
     "MCPAgent",
-    "OBDIAGAgent"
+    "OBDIAGAgent",
+    "OBRAGAgent",
 ]
