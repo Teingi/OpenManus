@@ -60,4 +60,18 @@ class OBRAG(BaseTool):
 
 
 if __name__ == "__main__":
-    bash = OBRAG()
+    rag = OBRAG()
+    result=rag.query_qe("obdiag的使用方法")
+    chunk_all = ""
+    content_all = ""
+    for i in result:
+        content = i[0]
+        chunk = i[1]
+        if content is not None:
+            content_all += content
+        if chunk is not None:
+            chunk_all += chunk
+    print("chunk_all:", chunk_all)
+    print("content_all:", content_all)
+
+

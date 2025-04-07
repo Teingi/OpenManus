@@ -3,8 +3,8 @@ from typing import List
 from pydantic import Field
 
 from app.agent.toolcall import ToolCallAgent
-from app.prompt.obdiag import OBDIAG_SYSTEM_PROMPT, NEXT_STEP_PROMPT
-from app.tool import Bash, OBDIAG, Terminate, ToolCollection
+from app.prompt.obrag import SYSTEM_PROMPT, NEXT_STEP_PROMPT
+from app.tool import Bash, Terminate, ToolCollection, OBRAG
 
 
 class OBRAGAgent(ToolCallAgent):
@@ -13,7 +13,7 @@ class OBRAGAgent(ToolCallAgent):
     name: str = "obrag"
     description: str = "an autonomous AI programmer that interacts directly with the computer to solve obdiag tasks."
 
-    system_prompt: str = OBDIAG_SYSTEM_PROMPT
+    system_prompt: str = SYSTEM_PROMPT
     next_step_prompt: str = NEXT_STEP_PROMPT
 
     available_tools: ToolCollection = ToolCollection(
