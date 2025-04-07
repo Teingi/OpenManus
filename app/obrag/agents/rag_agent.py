@@ -63,4 +63,4 @@ Below, please give your answer to the user's question directly according to the 
 """
 
 
-rag_agent = AgentBase(prompt=prompt, name=__name__)
+rag_agent = AgentBase(prompt=rag_prompt, name=__name__)
