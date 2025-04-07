@@ -8,25 +8,22 @@ import json
 import getpass
 import os
 
+from app.config import config
 
-if "API_KEY" not in os.environ:
-    os.environ["API_KEY"] = getpass.getpass("API_KEY: ")
 
 from langchain_openai import ChatOpenAI
 
 
 def get_model(**kwargs) -> ChatOpenAI:
+    llm_config = config.llm.get("default", )
     model = ChatOpenAI(
-        model=kwargs.pop("llm_model", os.getenv("LLM_MODEL", "")),
+        model=kwargs.pop("llm_model", llm_config.model),
         temperature=0.2,
         max_tokens=2000,
-        api_key=kwargs.pop("llm_api_key", os.getenv("API_KEY")),
+        api_key=kwargs.pop("llm_api_key", llm_config.api_key),
         base_url=kwargs.pop(
             "llm_base_url",
-            os.getenv(
-                "LLM_BASE_URL",
-                "",
-            ),
+            llm_config.base_url,
         ),
         **kwargs,
     )

@@ -30,13 +30,12 @@ class LLMSettings(BaseModel):
 
 class OBragSettings(BaseModel):
     # 基于配置生成模板
-
     model_type: str = Field(..., description="Model type (local, remote, etc.)")
-    beg_model_path: str = Field("LLMSettings", description="Model path")
+    beg_model_path: str = Field(..., description="Model path")
     db_host: str = Field(..., description="Oceanbase Database host")
     db_port: str = Field(..., description="OceanbaseDatabase port")
     db_user: str = Field(..., description="OceanbaseDatabase user")
-    db_password: str = Field(..., description="OceanbaseDatabase password")
+    db_password: str = Field(default=None, description="OceanbaseDatabase password")
     db_name: str = Field(..., description="Oceanbase Database name")
 
 
@@ -241,6 +240,11 @@ class Config:
         else:
             mcp_settings = MCPSettings()
         obrag_config = raw_config.get("obrag", {})
+        obrag_settings = None
+        if obrag_config:
+            obrag_settings = OBragSettings(**obrag_config)
+        else:
+            obrag_settings = OBragSettings()
 
         config_dict = {
             "llm": {
@@ -254,7 +258,7 @@ class Config:
             "browser_config": browser_settings,
             "search_config": search_settings,
             "mcp_config": mcp_settings,
-            "obrag_config": obrag_config,
+            "obrag_config": obrag_settings,
         }
 
         self._config = AppConfig(**config_dict)

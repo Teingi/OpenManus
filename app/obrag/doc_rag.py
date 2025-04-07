@@ -5,11 +5,11 @@ from typing import Iterator, Optional, Union
 
 from langchain_core.messages import AIMessageChunk
 from langchain_oceanbase import OceanbaseVectorStore
-from sympy.physics.units import cm
-from agents.base import AgentBase
-from agents.intent_guard_agent import prompt as guard_prompt
-from agents.rag_agent import  rag_prompt,  rag_prompt_en
-from agents.universe_rag_agent import (
+from app.obrag.documents import component_mapping as cm
+from app.obrag.agents.base import AgentBase
+from app.obrag.agents.intent_guard_agent import prompt as guard_prompt
+from app.obrag.agents.rag_agent import  rag_prompt,  rag_prompt_en
+from app.obrag.agents.universe_rag_agent import (
     prompt as universal_rag_prompt,
     prompt_en as universal_rag_prompt_en,
 )
@@ -25,23 +25,23 @@ connection_args = {
     "host": config.obrag_config.db_host,
     "port":  config.obrag_config.db_port,
     "user":  config.obrag_config.db_user,
-    "password": config.obrag_config.db_password.replace("@", "%40") if config.obrag_config.db_password else None,
+    "password": config.obrag_config.db_password,
     "db_name": "test",
 }
-
+llm_config = config.llm.get("default")
 embeddings = get_embedding(
     ollama_url= None,
     ollama_token= None,
-    base_url= config.llm.base_url+"/embeddings",
-    api_key= config.llm.api_key,
-    model=config.llm.model,
+    base_url= llm_config.base_url+"/embeddings",
+    api_key= llm_config.api_key,
+    model=llm_config.model,
 )
 
 
 vs = OceanbaseVectorStore(
     embedding_function=embeddings,
     table_name="corpus",
-    connection_args=None,
+    connection_args=connection_args,
     metadata_field="metadata",
     extra_columns=[Column("component_code", Integer, primary_key=True)],
     echo=os.getenv("ECHO") == "true",
@@ -342,13 +342,14 @@ def doc_rag_stream(
 
 
 def query_qe(query):
+    llm_config = config.llm.get("default")
     History = []
     oceanbase_only = True
     rerank = False
     search_docs = True
     lang = "zh"
     show_refs = True
-    llm_model = "deepseek-v3"
+    llm_model = llm_config.model
     res=doc_rag_stream(
         query=query,
         chat_history=History,
@@ -380,16 +381,4 @@ if __name__ == "__main__":
     print("chunk_all",chunk_all)
 
     print("content_all",content_all)
-    info=query_qe("你好")
-    chunk_all = ""
-    content_all = ""
-    for i in info:
-        content = i[0]
-        chunk = i[1]
-        if content is not None:
-            content_all += content
-        if chunk is not None:
-            chunk_all += chunk
-    print("chunk_all",chunk_all)
 
-    print("content_all",content_all)

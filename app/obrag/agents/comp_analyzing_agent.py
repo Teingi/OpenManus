@@ -67,4 +67,4 @@ OCP所在的机器重启了，如何恢复OCP的所有服务？
 """
 
 
-component_analyzing_agent = AgentBase(prompt=prompt, name=__name__)
+component_analyzing_agent = AgentBase(prompt=caa_prompt, name=__name__)

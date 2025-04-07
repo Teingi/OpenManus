@@ -1,7 +1,4 @@
-import asyncio
 
-
-from langchain.embeddings import OpenAIEmbeddings
 from langchain_core.messages import AIMessageChunk
 
 from app.tool import BaseTool

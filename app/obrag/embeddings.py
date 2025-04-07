@@ -132,7 +132,7 @@ class BGEEmbedding(Embeddings):
             print("Module FlagEmbedding not found, please execute `poetry add flagembedding` first")
             exit(1)
         self.__model = BGEM3FlagModel(
-            model_name_or_path=config.obrag.beg_model_path or "BAAI/bge-m3",
+            model_name_or_path= "BAAI/bge-m3",
             pooling_method="cls",
             normalize_embeddings=True,
             use_fp16=True,

@@ -23,14 +23,15 @@ from app.config import config
 
 
 def get_model(**kwargs) -> ChatOpenAI:
+    llm_config = config.llm.get("default")
     model = ChatOpenAI(
-        model=kwargs.pop("llm_model", config.llm.model),
+        model=kwargs.pop("llm_model", llm_config.model),
         temperature=0.2,
         max_tokens=2000,
-        api_key=kwargs.pop("llm_api_key", config.llm.api_key),
+        api_key=kwargs.pop("llm_api_key", llm_config.api_key),
         base_url=kwargs.pop(
             "llm_base_url",
-            config.llm.base_url,
+            llm_config.base_url,
         ),
         **kwargs,
     )
@@ -144,26 +145,26 @@ OceanBase 及其相关组件和描述如下：
 请根据 OceanBase 的组件描述和用户的提问，判断相关的 OceanBase 及其组件的文档和版本，以便后续查阅文档回答用户，并按照指定的 JSON 格式进行输出。如果用户提及的内容只包含了组件本身而没有提到版本，那么默认使用最新版本的文档库。
 输出要求: 不要用代码块包裹，直接输出 JSON 格式的字符串，oceanbase 和其他组件的版本一定要在支持的组件和版本列表里！禁止杜撰和捏造。
 
-输出格式如下: 
+输出格式如下:
 {{
   "components": ["组件名1", "组件名2", ...] (如果有的话，否则为空数组)
 }}
 
-示例 1: 
+示例 1:
 用户问题: oceanbase社区版本V4.2.1， OCP进程死掉，无法重启
-输出: 
+输出:
 {{
   "components": ["observer", "ocp"]
 }}
 
-示例 2: 
+示例 2:
 用户问题: 当某个普通租户的memstore使用达到阈值后，选择合并或者转储的依据是什么？
-输出: 
+输出:
 {{
   "components": ["observer"]
 }}
 
-示例 3: 
+示例 3:
 用户问题: miniob 的系统架构是怎样的？
 输出:
 {{
@@ -178,7 +179,7 @@ OCP所在的机器重启了，如何恢复OCP的所有服务？
 【 使用版本 】4.2.1
 【问题描述】OCP所在机器重启了，OCP服务、OCP底层依赖的单节点的observer和obproxy都不存在了，如何快速恢复OCP服务？
 【复现路径】直接重启物理机
-输出: 
+输出:
 {{
   "components": ["observer", "ocp"]
 }}
