@@ -97,6 +97,7 @@ replacers = [
         "https://github.com/oceanbase/oceanbase-proxy-doc/blob/V4.3.0",
     ),
     (r"^.*?ob-operator/", "https://github.com/oceanbase/ob-operator/blob/master/"),
+
 ]
 
 

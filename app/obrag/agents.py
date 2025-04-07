@@ -135,6 +135,8 @@ OceanBase 及其相关组件和描述如下：
   operator: operator 是在 Kubernetes 中部署和管理 OceanBase 的自动化运维工具，支持自动化部署、扩容、缩容、备份、恢复等功能。
   obshell: OceanBase Shell 是 OceanBase 社区为运维人员 & 开发人员提供的免安装、开箱即用的本地集群命令行工具。支持集群运维，同时基于 OBServer 对外提供运维管理 API。
   miniob: MiniOB 是 OceanBase 的单机教学版本，用于学习和测试，OceanBase 每年都以此为基础举办数据库比赛，赛题一般是给 miniob 增加特性。
+  obdiag: obdiag 是 OceanBase 的黑屏诊断工具，现有功能包含了对于 OceanBase 日志、SQL Audit 以及 OceanBase 进程堆栈等信息进行的扫描、收集，可以在 OceanBase 集群不同的部署模式下（OCP，OBD 或用户根据文档手工部署）实现一键执行，完成诊断信息的获取以及分析。
+
 
 历史对话:
 {background_history}
@@ -232,6 +234,7 @@ Background knowledge: Introduction to OceanBase and related components:
   operator: operator is an automated operation and maintenance tool for deploying and managing OceanBase in Kubernetes, supporting automated deployment, expansion, reduction, backup, recovery and other functions.
   obshell: OceanBase Shell is a local cluster command line tool that is free of installation and ready to use provided by the OceanBase community for operation and maintenance personnel and developers. Supports cluster operation and maintenance, and provides operation and maintenance management API based on OBServer.
   miniob: MiniOB is a stand-alone teaching version of OceanBase, which is used for learning and testing. OceanBase holds database competitions based on this every year. The competition questions are generally to add features to miniob.
+  obdiag: obdiag is OceanBase's black screen diagnosis tool, which currently includes scanning and collecting OceanBase logs, SQL Audit, and OceanBase process stack information. It can be executed with one click in different deployment modes of OceanBase cluster (OCP, OBD or manually deployed by users according to the document) to obtain and analyze diagnostic information.
 
 Below are the relevant document snippets retrieved, which may contain content from the Enterprise Edition of OceanBase (Oracle syntax compatibility, XA transactions, arbitration services, etc.). Please answer user questions based on the content of the Community Edition. Remember not to make up facts:
 {document_snippets}

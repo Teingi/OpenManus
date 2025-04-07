@@ -15,6 +15,7 @@ rag_prompt="""
   operator: operator 是在 Kubernetes 中部署和管理 OceanBase 的自动化运维工具，支持自动化部署、扩容、缩容、备份、恢复等功能。
   obshell: OceanBase Shell 是 OceanBase 社区为运维人员 & 开发人员提供的免安装、开箱即用的本地集群命令行工具。支持集群运维，同时基于 OBServer 对外提供运维管理 API。
   miniob: MiniOB 是 OceanBase 的单机教学版本，用于学习和测试，OceanBase 每年都以此为基础举办数据库比赛，赛题一般是给 miniob 增加特性。
+  obdiag: obdiag 是 OceanBase 的黑屏诊断工具，现有功能包含了对于 OceanBase 日志、SQL Audit 以及 OceanBase 进程堆栈等信息进行的扫描、收集，可以在 OceanBase 集群不同的部署模式下（OCP，OBD 或用户根据文档手工部署）实现一键执行，完成诊断信息的获取以及分析。
 
 下面是检索到的相关文档片段，其中可能有 OceanBase 企业版的内容 (Oracle 语法兼容、XA 事务、仲裁服务等)，请以社区版内容基准回答用户问题。切记不要编造事实：
 {document_snippets}

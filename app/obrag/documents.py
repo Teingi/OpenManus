@@ -30,6 +30,7 @@ component_mapping = {
     "operator": 5,
     "odp": 6,
     "odc": 7,
+    "obdiag": 8,
 }
 
 
