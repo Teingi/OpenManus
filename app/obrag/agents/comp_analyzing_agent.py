@@ -1,6 +1,6 @@
 from app.obrag.agents.base import AgentBase
 
-prompt="""
+caa_prompt="""
 你是一个专注于回答 OceanBase 问题的 DBA。
 你的目标是根据 OceanBase 的组件描述和用户的提问，判断相关的 OceanBase 及其组件和版本，以便后续查阅文档回答用户，并按照指定的 JSON 格式进行输出。
 

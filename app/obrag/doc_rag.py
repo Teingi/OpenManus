@@ -1,36 +1,24 @@
-import re
 import os
+import re
 import time
-
 from typing import Iterator, Optional, Union
 
-from langchain_core.documents import Document
 from langchain_core.messages import AIMessageChunk
-from app.obrag.embeddings import get_embedding
-from app.obrag.documents import Document, DocumentMeta, component_mapping as cm
-from agents import AgentBase
-from agents import prompt as rag_prompt, prompt_en as rag_prompt_en
-from agents import (
+from langchain_oceanbase import OceanbaseVectorStore
 from sympy.physics.units import cm
-
 from agents.base import AgentBase
-from agents.rag_agent import prompt as rag_prompt, prompt_en as rag_prompt_en
+from agents.intent_guard_agent import prompt as guard_prompt
+from agents.rag_agent import  rag_prompt,  rag_prompt_en
 from agents.universe_rag_agent import (
     prompt as universal_rag_prompt,
     prompt_en as universal_rag_prompt_en,
 )
-from agents import prompt as guard_prompt
-from agents  import prompt as caa_prompt
-from agents.intent_guard_agent import prompt as guard_prompt
-from agents.comp_analyzing_agent import prompt as caa_prompt
-from sqlalchemy import Column, Integer
-from app.config import OBragSettings, config
-
-from langchain_oceanbase.vectorstores import OceanbaseVectorStore
-
+from app.obrag.agents.comp_analyzing_agent import caa_prompt
+from app.obrag.documents import Document
 from app.obrag.documents import DocumentMeta
 from app.obrag.embeddings import get_embedding
 from app.obrag.zhipu_embeddings import t
+from sqlalchemy import Column, Integer
 
 connection_args = {
     "host": os.getenv("DB_HOST") or "",
