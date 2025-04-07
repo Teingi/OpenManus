@@ -28,6 +28,16 @@ class LLMSettings(BaseModel):
     api_type: str = Field(..., description="Azure, Openai, or Ollama")
     api_version: str = Field(..., description="Azure Openai version if AzureOpenai")
 
+class OBragSettings(BaseModel):
+    # 基于配置生成模板
+    model_type: str = Field(..., description="Model type (local, remote, etc.)")
+    beg_model_path: str = Field(..., description="Model path")
+    db_host: str = Field(..., description="Oceanbase Database host")
+    db_port: str = Field(..., description="OceanbaseDatabase port")
+    db_user: str = Field(..., description="OceanbaseDatabase user")
+    db_password: str = Field(default=None, description="OceanbaseDatabase password")
+    db_name: str = Field(..., description="Oceanbase Database name")
+
 
 class ProxySettings(BaseModel):
     server: str = Field(None, description="Proxy server address")
@@ -118,6 +128,9 @@ class AppConfig(BaseModel):
         None, description="Search configuration"
     )
     mcp_config: Optional[MCPSettings] = Field(None, description="MCP configuration")
+    obrag_config: Optional[OBragSettings] = Field(
+        None, description="OBrag configuration"
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -226,6 +239,12 @@ class Config:
             mcp_settings = MCPSettings(**mcp_config)
         else:
             mcp_settings = MCPSettings()
+        obrag_config = raw_config.get("obrag", {})
+        obrag_settings = None
+        if obrag_config:
+            obrag_settings = OBragSettings(**obrag_config)
+        else:
+            obrag_settings = OBragSettings()
 
         config_dict = {
             "llm": {
@@ -239,6 +258,7 @@ class Config:
             "browser_config": browser_settings,
             "search_config": search_settings,
             "mcp_config": mcp_settings,
+            "obrag_config": obrag_settings,
         }
 
         self._config = AppConfig(**config_dict)
@@ -263,6 +283,11 @@ class Config:
     def mcp_config(self) -> MCPSettings:
         """Get the MCP configuration"""
         return self._config.mcp_config
+
+    @property
+    def obrag_config(self) -> OBragSettings:
+        """Get the OBrag configuration"""
+        return self._config.obrag_config
 
     @property
     def workspace_root(self) -> Path:
