@@ -28,6 +28,17 @@ class LLMSettings(BaseModel):
     api_type: str = Field(..., description="Azure, Openai, or Ollama")
     api_version: str = Field(..., description="Azure Openai version if AzureOpenai")
 
+class OBragSettings(BaseModel):
+    # 基于配置生成模板
+
+    model_type: str = Field(..., description="Model type (local, remote, etc.)")
+    beg_model_path: str = Field(..., description="Model path")
+    db_host: str = Field(..., description="Oceanbase Database host")
+    db_port: str = Field(..., description="OceanbaseDatabase port")
+    db_user: str = Field(..., description="OceanbaseDatabase user")
+    db_password: str = Field(..., description="OceanbaseDatabase password")
+    db_name: str = Field(..., description="Oceanbase Database name")
+
 
 class ProxySettings(BaseModel):
     server: str = Field(None, description="Proxy server address")

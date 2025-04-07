@@ -38,6 +38,7 @@ def get_embedding(
     else:
         print("Using BGEEmbedding")
         __embedding = BGEEmbedding()
+    print("__embedding done")
     return __embedding
 
 
@@ -135,6 +136,7 @@ class BGEEmbedding(Embeddings):
             normalize_embeddings=True,
             use_fp16=True,
         )
+        print("Loading BGE model...")
         self.__default_embedding_type = default_embedding_type
 
     def embed_documents(
