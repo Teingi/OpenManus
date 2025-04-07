@@ -19,18 +19,18 @@ from langchain_core.messages import (
 from langchain.output_parsers.json import parse_json_markdown
 from typing import Iterator
 
+from app.config import config
+
+
 def get_model(**kwargs) -> ChatOpenAI:
     model = ChatOpenAI(
-        model=kwargs.pop("llm_model", os.getenv("LLM_MODEL", "deepseek-v3")),
+        model=kwargs.pop("llm_model", config.llm.model),
         temperature=0.2,
         max_tokens=2000,
-        api_key=kwargs.pop("llm_api_key", os.getenv("API_KEY")),
+        api_key=kwargs.pop("llm_api_key", config.llm.api_key),
         base_url=kwargs.pop(
             "llm_base_url",
-            os.getenv(
-                "LLM_BASE_URL",
-                "https://ai.oceanbase-dev.com/deepseek-v3/v1",
-            ),
+            config.llm.base_url,
         ),
         **kwargs,
     )
@@ -254,8 +254,7 @@ rag_agent = AgentBase(prompt=prompt, name=__name__)
 component_analyzing_agent = AgentBase(prompt=prompt, name=__name__)
 
 
-if "API_KEY" not in os.environ:
-    os.environ["API_KEY"] = getpass.getpass("API_KEY: ")
+
 
 
 

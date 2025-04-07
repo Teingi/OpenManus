@@ -13,6 +13,7 @@ from agents.universe_rag_agent import (
     prompt as universal_rag_prompt,
     prompt_en as universal_rag_prompt_en,
 )
+from app.config import config
 from app.obrag.agents.comp_analyzing_agent import caa_prompt
 from app.obrag.documents import Document
 from app.obrag.documents import DocumentMeta
@@ -21,25 +22,25 @@ from app.obrag.zhipu_embeddings import t
 from sqlalchemy import Column, Integer
 
 connection_args = {
-    "host": os.getenv("DB_HOST") or "",
-    "port": os.getenv("DB_PORT") or " ",
-    "user": os.getenv("DB_USER") or "",
-    "password": os.getenv("DB_PASSWORD").replace("@", "%40") if os.getenv("DB_PASSWORD") else "",
-    "db_name": os.getenv("DB_NAME") or "test",
+    "host": config.obrag_config.db_host,
+    "port":  config.obrag_config.db_port,
+    "user":  config.obrag_config.db_user,
+    "password": config.obrag_config.db_password.replace("@", "%40") if config.obrag_config.db_password else None,
+    "db_name": "test",
 }
 
 embeddings = get_embedding(
-    ollama_url=os.getenv("OLLAMA_URL") or None,
-    ollama_token=os.getenv("OLLAMA_TOKEN") or None,
-    base_url=os.getenv("OPENAI_EMBEDDING_BASE_URL") or None,
-    api_key=os.getenv("OPENAI_EMBEDDING_API_KEY") or os.getenv("API_KEY") or None,
-    model=os.getenv("OPENAI_EMBEDDING_MODEL") or None,
+    ollama_url= None,
+    ollama_token= None,
+    base_url= config.llm.base_url+"/embeddings",
+    api_key= config.llm.api_key,
+    model=config.llm.model,
 )
 
 
 vs = OceanbaseVectorStore(
     embedding_function=embeddings,
-    table_name=os.getenv("TABLE_NAME", "corpus"),
+    table_name="corpus",
     connection_args=None,
     metadata_field="metadata",
     extra_columns=[Column("component_code", Integer, primary_key=True)],

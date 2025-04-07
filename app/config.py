@@ -32,7 +32,7 @@ class OBragSettings(BaseModel):
     # 基于配置生成模板
 
     model_type: str = Field(..., description="Model type (local, remote, etc.)")
-    beg_model_path: str = Field(..., description="Model path")
+    beg_model_path: str = Field("LLMSettings", description="Model path")
     db_host: str = Field(..., description="Oceanbase Database host")
     db_port: str = Field(..., description="OceanbaseDatabase port")
     db_user: str = Field(..., description="OceanbaseDatabase user")
@@ -129,6 +129,9 @@ class AppConfig(BaseModel):
         None, description="Search configuration"
     )
     mcp_config: Optional[MCPSettings] = Field(None, description="MCP configuration")
+    obrag_config: Optional[OBragSettings] = Field(
+        None, description="OBrag configuration"
+    )
 
     class Config:
         arbitrary_types_allowed = True
@@ -237,6 +240,7 @@ class Config:
             mcp_settings = MCPSettings(**mcp_config)
         else:
             mcp_settings = MCPSettings()
+        obrag_config = raw_config.get("obrag", {})
 
         config_dict = {
             "llm": {
@@ -250,6 +254,7 @@ class Config:
             "browser_config": browser_settings,
             "search_config": search_settings,
             "mcp_config": mcp_settings,
+            "obrag_config": obrag_config,
         }
 
         self._config = AppConfig(**config_dict)
@@ -274,6 +279,11 @@ class Config:
     def mcp_config(self) -> MCPSettings:
         """Get the MCP configuration"""
         return self._config.mcp_config
+
+    @property
+    def obrag_config(self) -> OBragSettings:
+        """Get the OBrag configuration"""
+        return self._config.obrag_config
 
     @property
     def workspace_root(self) -> Path:

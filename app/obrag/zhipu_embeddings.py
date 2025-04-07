@@ -1,18 +1,11 @@
 import os
 import dotenv
 
+from app.config import config
+
 dotenv.load_dotenv()
 from langchain_openai import OpenAIEmbeddings
 
-
-def get_embedding():
-    return OpenAIEmbeddings(
-        api_key=os.environ["API_KEY"],
-        model="embedding-2",
-        base_url=os.getenv(
-            "LLM_BASE_URL", ""
-        ),
-    )
 
 tr = {
     "en": {

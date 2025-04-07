@@ -6,6 +6,7 @@ from typing import List, Union, Optional
 from langchain_core.embeddings import Embeddings
 from langchain_core.documents import Document
 
+from app.config import config
 
 __embedding = None
 
@@ -131,7 +132,7 @@ class BGEEmbedding(Embeddings):
             print("Module FlagEmbedding not found, please execute `poetry add flagembedding` first")
             exit(1)
         self.__model = BGEM3FlagModel(
-            model_name_or_path=os.getenv("BGE_MODEL_PATH", "BAAI/bge-m3"),
+            model_name_or_path=config.obrag.beg_model_path or "BAAI/bge-m3",
             pooling_method="cls",
             normalize_embeddings=True,
             use_fp16=True,
