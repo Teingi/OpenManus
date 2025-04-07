@@ -9,9 +9,18 @@ from app.tool.base import ToolResult, CLIResult
 
 
 class OBRAG(BaseTool):
-    name = "OBRAG"
-    description = "从OceanBase向量库中检索文档"
-
+    name: str = "code"  # 添加类型注解
+    description: str = "从OceanBase向量库中检索文档"
+    parameters: dict = {
+        "type": "object",
+        "properties": {
+            "code": {
+                "type": "string",
+                "description": "Code for retrieving documents from OceanBase vector library",
+            },
+        },
+        "required": ["code"],
+    }
     def query_qe(self,query):
         History = []
         oceanbase_only = True
