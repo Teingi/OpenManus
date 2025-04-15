@@ -10,6 +10,8 @@ from app.sandbox.client import SANDBOX_CLIENT
 from app.schema import ROLE_TYPE, AgentState, Memory, Message
 
 
+# 多重继承，BaseAgent 会继承这两个父类的所有属性和方法。aseModel 是 Pydantic 库中的一个核心类，用于定义数据模型
+# ABC 抽象类中可以包含抽象方法（使用 @abstractmethod 装饰器标记），这些方法必须在子类中实现
 class BaseAgent(BaseModel, ABC):
     """Abstract base class for managing agent state and execution.
 
@@ -17,11 +19,11 @@ class BaseAgent(BaseModel, ABC):
     and a step-based execution loop. Subclasses must implement the `step` method.
     """
 
-    # Core attributes
+    # Core attributes 定义了代理的基本信息，name 是必填字段，而 description 是可选的。
     name: str = Field(..., description="Unique name of the agent")
     description: Optional[str] = Field(None, description="Optional agent description")
 
-    # Prompts
+    # Prompts 分别表示系统级指令提示和下一步动作提示。这些提示可以用于指导代理的行为。
     system_prompt: Optional[str] = Field(
         None, description="System-level instruction prompt"
     )
@@ -29,23 +31,28 @@ class BaseAgent(BaseModel, ABC):
         None, description="Prompt for determining next action"
     )
 
-    # Dependencies
+    # Dependencies llm 是语言模型实例，负责处理文本生成等任务。
+    # memory 是代理的记忆存储，用于保存对话历史或其他相关信息。
     llm: LLM = Field(default_factory=LLM, description="Language model instance")
     memory: Memory = Field(default_factory=Memory, description="Agent's memory store")
+    # 表示代理的当前状态（如空闲、运行中、完成、错误等）。使用了枚举类型 AgentState。
     state: AgentState = Field(
         default=AgentState.IDLE, description="Current agent state"
     )
 
-    # Execution control
+    # Execution control 控制代理的最大执行步数和当前步数，防止无限循环。
     max_steps: int = Field(default=10, description="Maximum steps before termination")
     current_step: int = Field(default=0, description="Current step in execution")
-
+    # 用于检测代理是否陷入重复行为的阈值。
     duplicate_threshold: int = 2
 
     class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"  # Allow extra fields for flexibility in subclasses
+        arbitrary_types_allowed = True # 允许在字段中使用自定义类型（如 LLM 和 Memory）
+        extra = "allow"  # 允许子类添加额外字段，增加灵活性。
 
+    #在对象初始化后，检查并设置默认值。
+    # 如果未提供 llm 或提供的不是 LLM 类型，则创建一个默认的 LLM 实例。
+    # 如果未提供 memory 或提供的不是 Memory 类型，则创建一个默认的 Memory 实例。
     @model_validator(mode="after")
     def initialize_agent(self) -> "BaseAgent":
         """Initialize agent with default settings if not provided."""
@@ -113,6 +120,11 @@ class BaseAgent(BaseModel, ABC):
         kwargs = {"base64_image": base64_image, **(kwargs if role == "tool" else {})}
         self.memory.add_message(message_map[role](content, **kwargs))
 
+    # 检查代理是否处于空闲状态。
+    # 如果有初始请求，将其添加到记忆中。
+    # 在 RUNNING 状态下逐步执行任务。
+    # 检测是否陷入重复行为（通过 is_stuck 方法）。
+    # 返回执行结果。
     async def run(self, request: Optional[str] = None) -> str:
         """Execute the agent's main loop asynchronously.
 

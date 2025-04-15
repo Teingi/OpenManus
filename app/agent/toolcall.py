@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, List, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from pydantic import Field
 
@@ -150,6 +150,9 @@ class ToolCallAgent(ReActAgent):
             logger.info(
                 f"🎯 Tool '{command.function.name}' completed its mission! Result: {result}"
             )
+
+            if self.max_observe:
+                result = result[: self.max_observe]
 
             # Add tool response to memory
             tool_msg = Message.tool_message(

@@ -136,6 +136,16 @@ For unstable multi-agent version, you also can run:
 python run_flow.py
 ```
 
+GUI based app
+```bash
+python gui.py
+```
+
+web app
+```bash
+python app.py
+```
+
 ## How to contribute
 
 We welcome any friendly suggestions and helpful contributions! Just create issues or submit pull requests.

@@ -94,7 +94,26 @@ temperature = 0.0                          # Controls randomness for vision mode
 #cpu_limit = 2.0
 #timeout = 300
 #network_enabled = true
+model = "claude-3-5-sonnet"
+base_url = "https://api.openai.com/v1"
+api_key = "sk-..."
+
+# Server configuration
+[server]
+host = "localhost"
+port = 5172
 
 # MCP (Model Context Protocol) configuration
 [mcp]
 server_reference = "app.mcp.server" # default server module reference
+
+# obrag configuration
+[obrag]
+model_type = "local"
+beg_model_path = "***"
+db_host = "***"
+db_port = "***"
+db_user = "***"
+db_password = "***"
+db_name = "***"
+
